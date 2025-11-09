@@ -8,10 +8,26 @@ import config from "./config";
 
 const app: Application = express();
 
-// ✅ Allow requests from your frontend
+// ✅ CORS configuration
+const allowedOrigins = [
+  "https://doctor-appfrontend.vercel.app", // live frontend
+  "http://localhost:3000", // local frontend
+];
+
 app.use(
   cors({
-    origin: ["https://doctor-appfrontend.vercel.app"],
+    origin: allowedOrigins,
+    credentials: true, // allow cookies / auth headers
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ Handle preflight OPTIONS requests
+app.options(
+  "*",
+  cors({
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -29,8 +45,10 @@ app.get("/", (req: Request, res: Response) => {
   res.send(config.clientUrl);
 });
 
+// 🔹 All API routes
 app.use("/api/v1", router);
 
+// 🔹 Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({ success: false, message: err.message });
